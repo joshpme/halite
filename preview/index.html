@@ -1,0 +1,220 @@
+<?php $seed = (isset($_GET['seed'])) ? $_GET['seed'] : rand(0, 100000); ?>
+<!DOCTYPE HTML>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Visualizer</title>
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" />
+        <link href="lib/bootstrap.min.css" rel="stylesheet">
+        <link href="style/general.css" rel="stylesheet">
+        <style>
+            body {
+                background-color:#000;
+                color:#FFF;
+            }
+            pre {
+                white-space: pre-wrap;       /* Since CSS 2.1 */
+                white-space: -moz-pre-wrap;  /* Mozilla, since 1999 */
+                white-space: -pre-wrap;      /* Opera 4-6 */
+                white-space: -o-pre-wrap;    /* Opera 7 */
+                word-wrap: break-word;       /* Internet Explorer 5.5+ */
+            }
+
+            .map-size { font-size: 28px;
+                        color:#FFFFFF;
+            }
+            .map-size option,.map-size select { color:#000000; }
+            #autoplay { font:initial; font-family:Arial; font-size:150%;}
+        </style>
+        <script>
+            var seed = Math.round(Math.random(0, 100000) * 10000);
+        </script>
+    </head>
+    <body>
+        <div id="container" class="container">
+            <div class="clearfix">
+                <h1 class=pull-left>GAME ID #<span id="seed"></span> - <a href='javascript:replay()'>[replay]</a> - <a href='javascript:again()'>[play again]</a></h1>
+                <div class="pull-right map-size">
+                    <div class="form-group">
+                        <label for="size">Map Size: </label>
+                        <select id="size">
+                            <option value='5'>5 x 5</option>
+                            <option value='20'>10 x 10</option>
+                            <option value='15'>15 x 15</option>
+                            <option value='20'>20 x 20</option>
+                            <option value='25'>25 x 25</option>
+                            <option value='30'>30 x 30</option>
+                            <option value='35'>35 x 35</option>
+                            <option value='40'>40 x 40</option>
+                            <option value='45'>45 x 45</option>
+                            <option value='50'>50 x 50</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="autoplay">
+                            <input type="checkbox" id="autoplay" value="1" />
+                            Autoplay
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <br />
+            <div id="pageContent" class="pageContent text-center">
+                <h1 id="status">Loading</h1>
+            </div>
+            <pre id="loading" style="text-align:left;display:none; max-height: 400px; overflow:auto;"></pre>
+            <pre id="errors" style="text-align:left;display:none; max-height: 400px; overflow:auto;"></pre>
+            <div class="results">
+                <h2>Results</h2>
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <td>Bot</td>
+                            <td>First</td>
+                            <td>Last</td>
+                        </tr>
+                    </thead>
+                    <tbody>
+
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/seedrandom/2.4.0/seedrandom.min.js"></script>
+        <script src="lib/xss.js"></script> 
+        <script src="lib/pixi.min.js"></script>
+        <script src="script/parsereplay.js"></script>
+        <script src="script/visualizer.js"></script>
+        <script>
+
+            var bots = [];
+            var loses = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+            var wins = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+            var loading = false;
+            function play(id)
+            {
+                $("#loading").text("").show();
+                $("#errors").hide();
+                $("#seed").text(id);
+                $("#pageContent").hide();
+                $("#status").text("Running simulation");
+                var size = $("#size").val();
+                loading = true;
+                $.getJSON("../run.php", "id=" + seed + "&size=" + size, function (output) {
+                    loading = false;
+                    $("#loading").hide();
+                    $("#pageContent").show();
+                    resetPlayback = false;
+
+                    showGame(textToGame(output.data, output.filename), $("#pageContent"), null, null, true, false, true);
+                    var last = bots.indexOf(output.last.name);
+                    if (last === -1)
+                    {
+                        bots.push(output.last.name);
+                    }
+                    last = bots.indexOf(output.last.name);
+                    loses[last] += 1;
+
+                    var first = bots.indexOf(output.first.name);
+                    if (first === -1)
+                    {
+                        bots.push(output.first.name);
+                    }
+                    first = bots.indexOf(output.first.name);
+                    wins[first] += 1;
+
+                    setTimeout(function () {
+                        var autoplay = $("#autoplay:checked").length;
+                        if (autoplay)
+                        {
+                            again();
+                        }
+                    });
+                    drawPositions();
+
+                    // only bother reporting one, hopefully you havent got bugs in more than one bots at once!!!
+                    if (output.error[0])
+                    {
+                        $("#errors").text(output.error[0]).show();
+                        $("#errors").scrollTop($("#errors")[0].scrollHeight);
+                    }
+
+                });
+
+
+            }
+
+            function drawPositions()
+            {
+                var row = "";
+                for (var i = 0; i < bots.length; i++)
+                {
+                    row += "<tr><td>" + bots[i] + "</td><td>" + wins[i] + "</td><td>" + loses[i] + "</td></tr>";
+
+                }
+                $(".results table tbody").html(row)
+            }
+
+            $("#autoplay").click(function () {
+                var autoplay = $("#autoplay:checked").length;
+                if (autoplay)
+                {
+                    again();
+                }
+            });
+
+            function replay()
+            {
+                resetPlayback = true;
+                setTimeout(function () {
+                    play(seed);
+                }, 200);
+            }
+            function again()
+            {
+                seed = Math.round(Math.random(0, 100000) * 10000);
+                replay();
+            }
+
+            play(seed);
+
+            function getData()
+            {
+                $.get("../watch.php", "", function (output) {
+                    if (output.finished)
+                    {
+                        if (output.errors)
+                        {
+                            $.get("../errors.json", "", function (output) {
+
+
+                            }, 'text');
+                        } else {
+                            renderData();
+                        }
+                    } else
+                    {
+                        setTimeout(function () {
+                            getData();
+                        }, 100);
+                    }
+                }, "json");
+            }
+
+            setInterval(function () {
+                if (loading)
+                {
+                    $.get("../timing.php", "", function (output) {
+                        $("#loading").text(output);
+                        $("#loading").scrollTop($("#loading")[0].scrollHeight);
+                    });
+                }
+            }, 1000);
+
+        </script>
+    </body>
+</html>
