@@ -373,11 +373,13 @@ class Map {
      * Reset all the queued moves
      */
     private function resetMoves() {
+        //debug("Resetting moves");
         for ($x = 0; $x < $this->width; $x++) {
             for ($y = 0; $y < $this->height; $y++) {
                 $this->blocks[$x][$y]->move = 0;
                 $this->blocks[$x][$y]->reserved = false;
                 $this->blocks[$x][$y]->stuck = false;
+                $this->blocks[$x][$y]->isBorder = false;
             }
         }
     }
@@ -386,11 +388,14 @@ class Map {
      * Register which blocks are borders
      */
     private function registerBorders() {
+        //debug("Registering borders");
         $this->borders = array_fill(0, 100, []);
         for ($x = 0; $x < $this->width; $x++) {
             for ($y = 0; $y < $this->height; $y++) {
-                if ($this->blocks[$x][$y]->isBorder()) {
-                    $this->borders[$this->blocks[$x][$y]->owner][] = $this->blocks[$x][$y];
+                $block = $this->blocks[$x][$y];
+                if ($block->isBorder()) {
+                    //debug("Is making something a border!!!" . $block);
+                    $this->borders[$block->owner][] = $block;
                 }
             }
         }
@@ -403,7 +408,7 @@ class Map {
      */
     private function read() {
         $input = fgets(STDIN);
-        file_put_contents("transmissions.txt","FRAME: " . $this->frame ."\r\nRECEIVED: \r\n" . $input . "\r\n", FILE_APPEND);
+        //file_put_contents("transmissions.txt","FRAME: " . $this->frame ."\r\nRECEIVED: \r\n" . $input . "\r\n", FILE_APPEND);
         // game ends when the game finishes sending input
         if ($input === false) {
             exit();
@@ -418,7 +423,7 @@ class Map {
      * @param type $data
      */
     private function send($data) {
-        file_put_contents("transmissions.txt","FRAME: " . $this->frame ."\r\nSENT: \r\n" . $data . "\r\n", FILE_APPEND);
+        //file_put_contents("transmissions.txt","FRAME: " . $this->frame ."\r\nSENT: \r\n" . $data . "\r\n", FILE_APPEND);
         fwrite(STDOUT, $data . "\n");
     }
 

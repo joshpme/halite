@@ -11,25 +11,40 @@ $map->ready("MyBot");
 
 while (true)
 {
-     
+    $free = $map->borders[0];
+    //debug("Total free " . count($free));
     // sort by highest production blocks
-    usort($map->borders[0], "byProd");
+    usort($free, "byProd");
 
     // Check and perform single step take overs 
-    singleStepTakeover();
+    singleStepTakeover($free);
     
     // Check and perform two step take overs
-    twoStepTakeover();
+    twoStepTakeover($free);
+    
+    //debug("My total blocks " . count($map->myBlocks()));
+    foreach ($map->myBlocks() as $block)
+    {
+        if (!$block->isBorder && $block->str > 50)
+        {
+            $blocks = $block->closest(0);
+            if ($blocks !== false)
+            {
+                $block->moveTo($blocks);
+            }
+        }
+    }
+    
     
     $map->update();
 }
 
 
-function singleStepTakeover()
+function singleStepTakeover($blocks)
 {
     global $map;
     
-    foreach ($map->borders[0] as $border)
+    foreach ($blocks as $border)
     {
         // Find my adjacnet blocks
         $adjacents = $border->adjacent($map->me);
@@ -52,7 +67,7 @@ function singleStepTakeover()
             foreach ($adjacents as $block)
                 if ($block->move == 0)
                 {
-                    debug($block . " directly taking over " . $border);
+                    //debug($block . " directly taking over " . $border);
                     $block->moveTo($border);
                     
                     // if you have enough strength, dont reserve any more blocks
@@ -64,11 +79,11 @@ function singleStepTakeover()
     }
 }
 
-function twoStepTakeover()
+function twoStepTakeover($blocks)
 {
     global $map;
     
-    foreach ($map->borders[0] as $border)
+    foreach ($blocks as $border)
     {
         if (!$border->reserved)
         {
@@ -80,6 +95,7 @@ function twoStepTakeover()
             $str = 0;
             $checked = [];
             foreach ($adjacents as $block)
+            {
                 if ($block->move == 0 && !$block->stuck)
                 {
                     $str += $block->str + $block->prod;
@@ -94,7 +110,9 @@ function twoStepTakeover()
                         }
                     }
                 }
-                
+                if ($str > $req)
+                    break;
+            }   
                 
             // If strong enough, do perform
             if ($str > $req)
@@ -103,11 +121,12 @@ function twoStepTakeover()
                 $str = 0;
                 $checked = [];
                 foreach ($adjacents as $block)
+                {
                     if ($block->move == 0 && !$block->stuck)
                     {
                         $block->stuck = true;
                         $str += $block->str + $block->prod;
-                        debug($block . " requesting assistance to take over " . $border);
+                        //debug($block . " requesting assistance to take over " . $border);
                         foreach ($block->adjacent($map->me) as $helper)
                         {
                             if (!in_array($helper,$checked) && $helper->move == 0)
@@ -120,6 +139,9 @@ function twoStepTakeover()
                             }
                         }
                     }
+                    if ($str > $req)
+                        break;
+                }
             }
         }
     }

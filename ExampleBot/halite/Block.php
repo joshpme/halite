@@ -41,10 +41,10 @@ class Block {
     public $move;
     
     /**
-     * Internal cache flag for if border
+     * Cached flag for if border
      * @var bool
      */
-    private $isBorder;
+    public $isBorder;
        
     /**
      * @var Map
@@ -80,7 +80,7 @@ class Block {
     }
 
     public function __toString() {
-        return "[" . $this->x . "," . $this->y . "] Owner: " . $this->owner . " Str: " . $this->str;
+        return "[" . $this->x . "," . $this->y . "] [Owner: " . $this->owner . "] [Str: " . $this->str . "] [Prod: " . $this->prod . "] [Border:" . ($this->isBorder ? "Yes" : "No") . "] ";
     }
     
     /**
@@ -202,18 +202,29 @@ class Block {
      */
     public function isBorder() 
     {
-        if ($this->isBorder)
+        if ($this->isBorder === true)
         {
             return true;
         }
         
+        $found = false;
+        
         foreach (CARDINALS as $direction) {
-            if ($this->owner != $this->get($direction)->owner) {
-                $this->get($direction)->isBorder = true;
+            $neighbour = $this->get($direction);
+            if ($this->owner != $neighbour->owner) {
                 $this->isBorder = true;
+                $neighbour->isBorder = true;
+                $found = true;
             }
         }
-        return false;
+        
+        if (!$found)
+        {
+            $this->isBorder = false;
+            return false;
+        }
+        
+        return true;
     }
 
     /**
@@ -281,7 +292,22 @@ class Block {
      * Set move towards the general direction of another block
      * @param Block $block
      */
-    public function moveTo(Block $block) {
+    public function moveTo($block) {
+        
+        // if many blocks
+        // pick one with highest production
+        if (is_array($block))
+        {
+            if (reset($block)->owner == 0)
+            {
+                usort($block, "byProd");
+                $block = reset($block);
+            }
+            else
+            {
+                $block = reset($block);
+            }
+        }
         $directions = $this->direction($block);
         $this->move = $directions[0];
     }
@@ -297,24 +323,35 @@ class Block {
     }
 
     /**
-     * Closest border block with matching owner id
+     * Closest border blocks with matching owner id
      * WARNING: Relatively slow operation
      * 
      * @param int $owner
-     * @return Block
+     * @return Block[]
      */
     public function closest($owner) {
         // to do make faster by determining size
-        if (count($this->map->byOwner[$owner]) == 0) {
+        if (count($this->map->byOwner[$owner]) == 0) 
+        {
+            echo "No more blocks by this owner";
+            exit();
             return false;
         } elseif (true) {
             // FULL SCAN
-            $distances = [];
+            $distances = array_fill(0, $this->map->height * $this->map->width, []);
             foreach ($this->map->borders[$owner] as $block) {
-                $distances[$this->distance($block)] = $block;
+                $distances[$this->distance($block)][] = $block;
             }
+            
             ksort($distances);
-            return reset($distances);
+            
+            foreach ($distances as $distance)
+            {
+                if (count($distance) > 0)
+                {
+                    return $distance;
+                }
+            }
         } else {
             // SEARCH OUTWARDS
             // Could be useful functionality for something else, but finding

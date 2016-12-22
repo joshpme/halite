@@ -12,6 +12,10 @@ if (file_exists("timing.php")) {
     unlink("timing.php");
 }
 
+if (file_exists("debug.txt")) {
+    unlink("debug.txt");
+}
+
 $results = array();
 exec("runGame.bat " . $id . " \"" . $size . " " . $size . "\"", $results);
 

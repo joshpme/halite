@@ -27,12 +27,22 @@ function debug($message,$frame = -1)
     }
 }
 
+// order by production in desending order
 function byProd($a, $b)
 {
     if ($a->prod == $b->prod) {
         return 0;
     }
-    return ($a->prod < $b->prod) ? -1 : 1;
+    return ($a->prod < $b->prod) ? 1 : -1;
+}
+
+// order by strength in desending order
+function byStr($a, $b)
+{
+    if ($a->str == $b->str) {
+        return 0;
+    }
+    return ($a->str < $b->str) ? 1 : -1;
 }
 
 

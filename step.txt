@@ -1,0 +1,58 @@
+[
+    [
+        "START COLLECTING",
+        1.6379730701447
+    ],
+    [
+        "FIND PLAN",
+        1.6663751602173
+    ],
+    [
+        "FIND BORDERS",
+        1.8297820091248
+    ],
+    [
+        "CURRENT STATUS",
+        "BEHIND"
+    ],
+    [
+        "CAN MAKE MOVE",
+        1.8349940776825
+    ],
+    [
+        "CAN PERFORM ASSIST",
+        1.9114441871643
+    ],
+    [
+        "REVIEW AWESOME ASSISTS",
+        1.9667761325836
+    ],
+    [
+        "CAN PERFORM SHIT ASSISTS",
+        1.9701271057129
+    ],
+    [
+        "REVIEW SHIT ASSISTS",
+        2.0454580783844
+    ],
+    [
+        "MOVE TO BORDER",
+        2.0508460998535
+    ],
+    [
+        "STOPPING WASTE",
+        2.3094410896301
+    ],
+    [
+        "PERFORM MOVE",
+        2.3213222026825
+    ],
+    [
+        "FINISH PERFORM MOVE",
+        2.3254210948944
+    ],
+    [
+        "TOTAL BLOCKS",
+        120
+    ]
+]
