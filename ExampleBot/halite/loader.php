@@ -23,9 +23,18 @@ function debug($message,$frame = -1)
     global $map;
     if ($frame == -1 || $frame == $map->frame)
     {
-        file_put_contents("debug.txt",$message . "\r\n", FILE_APPEND);
+        file_put_contents("debug.txt","[#" . $map->frame . "] " . $message . "\r\n", FILE_APPEND);
     }
 }
+
+function byProd($a, $b)
+{
+    if ($a->prod == $b->prod) {
+        return 0;
+    }
+    return ($a->prod < $b->prod) ? -1 : 1;
+}
+
 
 require("Block.php");
 require("Map.php");

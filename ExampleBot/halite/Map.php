@@ -306,9 +306,9 @@ class Map {
     private function receiveMap() {
         // Get new Map State from Server
         $frame = explode(" ", $this->read());
-
+        
         // Seperate Owners Data from Strength Data
-        $ownersLength = count($frame) - 1 - $this->height * $this->width;
+        $ownersLength = count($frame) - $this->height * $this->width;
 
         // Owners Data is the first section
         $owners = array_slice($frame, 0, $ownersLength);
@@ -361,6 +361,7 @@ class Map {
      * @param type $strengths
      */
     private function parseStrengths($strengths) {
+        
         for ($i = 0; $i < $this->width * $this->height; $i++) {
             $x = $i % $this->height;
             $y = floor($i / $this->height);
@@ -375,6 +376,8 @@ class Map {
         for ($x = 0; $x < $this->width; $x++) {
             for ($y = 0; $y < $this->height; $y++) {
                 $this->blocks[$x][$y]->move = 0;
+                $this->blocks[$x][$y]->reserved = false;
+                $this->blocks[$x][$y]->stuck = false;
             }
         }
     }
@@ -400,7 +403,7 @@ class Map {
      */
     private function read() {
         $input = fgets(STDIN);
-
+        file_put_contents("transmissions.txt","FRAME: " . $this->frame ."\r\nRECEIVED: \r\n" . $input . "\r\n", FILE_APPEND);
         // game ends when the game finishes sending input
         if ($input === false) {
             exit();
@@ -415,6 +418,7 @@ class Map {
      * @param type $data
      */
     private function send($data) {
+        file_put_contents("transmissions.txt","FRAME: " . $this->frame ."\r\nSENT: \r\n" . $data . "\r\n", FILE_APPEND);
         fwrite(STDOUT, $data . "\n");
     }
 

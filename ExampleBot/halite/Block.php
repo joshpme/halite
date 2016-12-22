@@ -50,6 +50,20 @@ class Block {
      * @var Map
      */
     private $map;
+    
+    /**
+     * You can tag a piece if you'd like to stop something else from taking it.
+     * 
+     * @var boolean
+     */
+    public $reserved;
+    
+    /**
+     * You can flag a block to say you want it to stay till
+     * 
+     * @var boolean
+     */
+    public $stuck;
 
     /**
      * @param Map $map
@@ -61,8 +75,14 @@ class Block {
         $this->x = $x;
         $this->y = $y;
         $this->move = STILL;
+        $this->reserved = false;
+        $this->stuck = false;
     }
 
+    public function __toString() {
+        return "[" . $this->x . "," . $this->y . "] Owner: " . $this->owner . " Str: " . $this->str;
+    }
+    
     /**
      * Get the next block by the same owner
      * 
