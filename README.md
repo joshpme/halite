@@ -95,15 +95,11 @@ public function myBorders()
 /**
  * Performs initial setup
  * Receives map from game
- * 
- * @param string $name
  */
 public function init()
 
 /**
  * Lets the Game know you are ready to start sending moves;
- * By sending your name
- * 
  * @param type $name
  */
 public function ready($name)

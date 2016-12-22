@@ -151,6 +151,13 @@ class Map {
      * @param type $name
      */
     public function ready($name) {
+        
+        if ($this->debugMode)
+        {
+            $this->frame = 0;
+            return false;
+        }
+        
         // Send Bot name to Game
         $this->send($name);
 
@@ -172,10 +179,6 @@ class Map {
      * @param type $message
      */
     public function timing($message, $reset = false) {
-        if ($reset) {
-            $this->start = microtime(true);
-        }
-
         if (!is_null($this->start)) {
             $elapsed = round((microtime(true) - $this->start) * 1000);
             file_put_contents("timing.php", "[#" . $this->frame . ", " . $elapsed . " ms elapsed] " . $message . "\r\n", FILE_APPEND);
@@ -186,6 +189,10 @@ class Map {
                 }
                 exit();
             }
+        }
+        
+        if ($reset) {
+            $this->start = microtime(true);
         }
     }
 
@@ -211,7 +218,7 @@ class Map {
     public function update() {
         // If in debug mode, will actually perform the move on the map
         if ($this->debugMode) {
-            return debugUpdate();
+            return $this->debugUpdate();
         }
 
         // Send Queued Moves to Game
@@ -379,9 +386,8 @@ class Map {
         $this->borders = array_fill(0, 100, []);
         for ($x = 0; $x < $this->width; $x++) {
             for ($y = 0; $y < $this->height; $y++) {
-                $block = $this->blocks[$x][$y];
-                if ($block->isBorder()) {
-                    $this->borders[$block->owner][] = $block;
+                if ($this->blocks[$x][$y]->isBorder()) {
+                    $this->borders[$this->blocks[$x][$y]->owner][] = $this->blocks[$x][$y];
                 }
             }
         }

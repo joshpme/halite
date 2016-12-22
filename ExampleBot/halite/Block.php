@@ -39,7 +39,13 @@ class Block {
      * @var int
      */
     public $move;
-
+    
+    /**
+     * Internal cache flag for if border
+     * @var bool
+     */
+    private $isBorder;
+       
     /**
      * @var Map
      */
@@ -174,11 +180,17 @@ class Block {
      * 
      * @return bool
      */
-    public function isBorder() {
-        $blocks = $this->adjacent();
-        foreach ($blocks as $block) {
-            if ($block->owner != $this->owner) {
-                return true;
+    public function isBorder() 
+    {
+        if ($this->isBorder)
+        {
+            return true;
+        }
+        
+        foreach (CARDINALS as $direction) {
+            if ($this->owner != $this->get($direction)->owner) {
+                $this->get($direction)->isBorder = true;
+                $this->isBorder = true;
             }
         }
         return false;
