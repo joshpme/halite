@@ -1,39 +1,22 @@
 <?php
-
 namespace Halite;
-
-error_reporting(E_ALL);
-
 require("halite/loader.php");
 
-$map = new Map(true);
+$map = new Map();
 
-$map->init("MyBot");
+$map->init();
 
-while (true) 
+// You have 15 seconds to make up your mind what to do, use it wisely
+
+$map->ready("MyBot");
+
+while (true)
 {
-    // find my first block
-    $block = $map->first($map->me);
+    // direct take over of adjacent unowned blocks
+    foreach ($map->myBorders() as $block)
+        foreach ($block->adjacent(-1) as $adjacent)
+            if ($block->str > $adjacent->str)
+                $block->moveTo($adjacent);
 
-    $target = $map->get(0,0);
-
-
-    while ($block) 
-    {
-        $block->move = 0;
-        // if strength is above 50
-
-        if ($block->str > 100)
-        {
-            $block->towards($target);
-            //$block->move = $block->direction($map->get(0,0))[0];
-        }
-
-        // get my next block	
-        $block = $block->next();
-    }
-
-    // send moves and get next frame
     $map->update();
 }
-

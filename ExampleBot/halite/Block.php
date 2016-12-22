@@ -45,7 +45,6 @@ class Block {
      */
     private $map;
 
-    
     /**
      * @param Map $map
      * @param int $x
@@ -66,7 +65,6 @@ class Block {
      */
     public function next() {
         $key = array_search($this, $this->map->byOwner[$this->owner]);
-
         if (isset($this->map->byOwner[$this->owner][$key + 1])) {
             return $this->map->byOwner[$this->owner][$key + 1];
         } else {
@@ -74,7 +72,19 @@ class Block {
         }
     }
 
-    
+    /**
+     * Send or Receive Current Move
+     * @param type $move
+     * @return type
+     */
+    public function move($move = -1) {
+        if ($move != -1) {
+            $this->move = $move;
+        }
+
+        return $this->move;
+    }
+
     /**
      * Get the block in a direction
      * 
@@ -102,10 +112,9 @@ class Block {
 
         return $this->map->get($x, $y);
     }
-    
 
     /**
-     * Is the current block mine?
+     * Is this block mine?
      * @return bool
      */
     public function isMine() {
@@ -113,7 +122,7 @@ class Block {
     }
 
     /**
-     * Is the current block unclaimed?
+     * Is this block unclaimed?
      * @return bool
      */
     public function isFree() {
@@ -133,39 +142,50 @@ class Block {
      * 
      * Optional owner filter
      * 
-     * @param array[]
+     * -1 is anyone but yourself
+     * 
+     * @param array[] $owners or int owner
      * @return Block[]
      */
-    public function adjacent(array $owners = null) {
+    public function adjacent($owners = null) {
+        if (!is_array($owners)) {
+            if ($owners == -1) {
+                $owners = array_merge($this->map->enemies, [0]);
+            } else {
+                $owners = [$owners];
+            }
+        }
+
         $blocks = [];
+
         foreach (CARDINALS as $direction) {
             $block = $this->get($direction);
             if (is_null($owners) || in_array($block->owner, $owners)) {
                 $blocks[] = $this->get($direction);
             }
         }
+
         return $blocks;
     }
-    
+
     /**
-     * Determines if the block is a border
-     * These are stored in map->borders for easy access
+     * Determines if the block is a border block
+     * These are cached in $map->borders[$owner] for faster access
      * 
      * @return bool
      */
-    public function isBorder()
-    {
+    public function isBorder() {
         $blocks = $this->adjacent();
-        foreach ($blocks as $block)
-        {
-            if ($block->owner != $this->owner)
+        foreach ($blocks as $block) {
+            if ($block->owner != $this->owner) {
                 return true;
+            }
         }
         return false;
     }
 
     /**
-     * Distance to block
+     * Shortest distance to block (including wrapping)
      * eg. [0,0] -> [1,1] is two as it would take two moves
      * 
      * @param Block $block
@@ -184,44 +204,54 @@ class Block {
     }
 
     /**
-     * Direction to a block
-     * Perfect diagonals get two values, self gets still
+     * Shortest direction to a block (including wrapping)
+     * Perfect diagonals get two values.
+     * Same location gets still.
+     * 
+     * Array always returned
+     * 
      * @param Block $block
      * @return int[]
      */
     public function direction(Block $block) {
-        
-        // if self
+
+        // If same location
         if ($this->x == $block->x && $this->y == $block->y) {
             return [STILL];
         }
-        
+
         $dx = $this->x - $block->x;
         $dy = $this->y - $block->y;
 
-        // wrapping support
+        // Wrapping support
         if (abs($dx) > $this->map->width / 2) {
-            $dx = $dx > 0 ? $dx - $this->map->width  : $this->map->width + $dx;
+            $dx = $dx > 0 ? $dx - $this->map->width : $this->map->width + $dx;
         }
         if (abs($dy) > $this->map->height / 2) {
             $dy = $dy > 0 ? $dy - $this->map->height : $this->map->height + $dy;
         }
-        
+
         $directions = [];
 
         if ($dy != 0 && abs($dx) == abs($dy)) {
             $directions[] = $dx > 0 ? LEFT : RIGHT;
             $directions[] = $dy > 0 ? UP : DOWN;
-        } elseif (abs($dy) > abs($dx))
-        {
+        } elseif (abs($dy) > abs($dx)) {
             $directions[] = $dy > 0 ? UP : DOWN;
-        }
-        else
-        {
+        } else {
             $directions[] = $dx > 0 ? LEFT : RIGHT;
         }
 
         return $directions;
+    }
+
+    /**
+     * Set move towards the general direction of another block
+     * @param Block $block
+     */
+    public function moveTo(Block $block) {
+        $directions = $this->direction($block);
+        $this->move = $directions[0];
     }
 
     /**
@@ -235,33 +265,28 @@ class Block {
     }
 
     /**
-     * Closest block with matching owner id
+     * Closest border block with matching owner id
      * WARNING: Relatively slow operation
      * 
      * @param int $owner
      * @return Block
      */
-    public function closest($owner) 
-    {
+    public function closest($owner) {
         // to do make faster by determining size
-        if (count($this->map->byOwner[$owner]) == 0)
-        {
+        if (count($this->map->byOwner[$owner]) == 0) {
             return false;
-        }
-        elseif (true)
-        {
+        } elseif (true) {
             // FULL SCAN
             $distances = [];
-            foreach ($this->map->borders[$owner] as $block)
-            {
+            foreach ($this->map->borders[$owner] as $block) {
                 $distances[$this->distance($block)] = $block;
             }
             ksort($distances);
             return reset($distances);
-        }
-        else
-        {
+        } else {
             // SEARCH OUTWARDS
+            // Could be useful functionality for something else, but finding
+            // something by an owner is faster by searching though all borders
             // start cardinals first
             $search = [$this->get(UP), $this->get(RIGHT), $this->get(DOWN), $this->get(LEFT)];
 
@@ -274,8 +299,7 @@ class Block {
             $i = 0;
 
             // while there are still items queued for searching
-            while ($i < count($search)) 
-            {
+            while ($i < count($search)) {
                 // get block to check
                 $block = $search[$i];
 
@@ -306,23 +330,21 @@ class Block {
 
             return false;
         }
-        
-        
     }
 
     /**
+     * TODO: NOT FINISHED YET!!!!
      * Move towards a target block, using a path with the lowest cost
      *
      * @param Block $target
      */
-    function towards(Block $target)
-    {
+    public function towards(Block $target) {
         $dx = $this->x - $target->x;
         $dy = $this->y - $target->y;
 
         // wrapping support
         if (abs($dx) > $this->map->width / 2) {
-            $dx = $dx > 0 ? $dx - $this->map->width  : $this->map->width + $dx;
+            $dx = $dx > 0 ? $dx - $this->map->width : $this->map->width + $dx;
         }
         if (abs($dy) > $this->map->height / 2) {
             $dy = $dy > 0 ? $dy - $this->map->height : $this->map->height + $dy;
@@ -336,14 +358,12 @@ class Block {
 
         echo "XL: " . $xl . "<br />";
         echo "XH: " . $xh . "<br />";
-        if ($dx == 0)
-        {
+        if ($dx == 0) {
             $this->move = $dy > 0 ? UP : DOWN;
             return 0;
         }
 
-        if ($dy == 0)
-        {
+        if ($dy == 0) {
             $this->move = $dx > 0 ? LEFT : RIGHT;
             return 0;
         }
@@ -351,14 +371,11 @@ class Block {
         $xcost = [];
         $ycost = [];
 
-        for ($y = $yl; $y <= $yh; $y++)
-        {
+        for ($y = $yl; $y <= $yh; $y++) {
             $ycost[$y] = 0;
-            for ($x = $xl; $x <= $xh; $x++)
-            {
+            for ($x = $xl; $x <= $xh; $x++) {
                 $block = $this->map->blocks[$x][$y];
-                if ($block->owner != $this->owner)
-                {
+                if ($block->owner != $this->owner) {
                     $ycost[$y] += $block->str;
                 }
             }
@@ -367,14 +384,11 @@ class Block {
 
         echo "DX: " . $dx . "<br />";
         echo "DY: " . $dy . "<br />";
-        for ($x = $xl; $x <= $xh; $x++)
-        {
+        for ($x = $xl; $x <= $xh; $x++) {
             $xcost[$x] = 0;
-            for ($y = $yl; $y <= $yh; $y++)
-            {
+            for ($y = $yl; $y <= $yh; $y++) {
                 $block = $this->map->blocks[$x][$y];
-                if ($block->owner != $this->owner)
-                {
+                if ($block->owner != $this->owner) {
                     $xcost[$x] += $block->str;
                 }
             }
@@ -384,38 +398,33 @@ class Block {
         var_dump($xcost);
         var_dump($ycost);
 
-        $targetx = array_search(min($xcost),$xcost);
-        $targety = array_search(min($ycost),$ycost);
+        $targetx = array_search(min($xcost), $xcost);
+        $targety = array_search(min($ycost), $ycost);
 
         $costy = min($ycost) / abs($dy);
         $costx = min($xcost) / abs($dx);
 
-if ($this->map->frame == 20) {
+        if ($this->map->frame == 20) {
 
 
-    echo "On frame " . $this->map->frame . "<br />";
-    echo "I am block " . $this->x . "," . $this->y . "<br />";
+            echo "On frame " . $this->map->frame . "<br />";
+            echo "I am block " . $this->x . "," . $this->y . "<br />";
 //
-}
+        }
 
         //echo "Target X: " . $targetx . "<br />";
         //echo "Target Y: " . $targety . "<br />";
 
-        if ($costy < $costx && $targety != $this->y || ($targetx == $this->x && $costy > $costx))
-        {
-            if ($this->map->frame == 20)
-            {
+        if ($costy < $costx && $targety != $this->y || ($targetx == $this->x && $costy > $costx)) {
+            if ($this->map->frame == 20) {
                 echo "Max X: " . min($xcost) . "<br />";
                 echo "Max Y: " . min($ycost) . "<br />";
                 echo "Target row is Y Level " . $targety . "<br />";
             }
             //echo "Go to [" . $this->x . "][" . $targety . "]<br />";
             $this->move = $dy < 0 ? UP : DOWN;
-        }
-        else
-        {
-            if ($this->map->frame == 20)
-            {
+        } else {
+            if ($this->map->frame == 20) {
                 echo "Max X: " . min($xcost) . "<br />";
                 echo "Max Y: " . min($ycost) . "<br />";
                 echo "Target row to X Level " . $targetx . "<br />";
@@ -424,9 +433,6 @@ if ($this->map->frame == 20) {
             //echo "Go to [" . $targetx . "][" . $this->y . "]<br />";
             $this->move = $dx < 0 ? LEFT : RIGHT;
         }
-
-
-
     }
 
 }

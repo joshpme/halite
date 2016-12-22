@@ -1,0 +1,11 @@
+<input type='slider' class='slider' data-slider-min="1" data-slider-max="<?php echo $this->frame; ?>" data-slider-step="1" />
+</div>
+<script>
+$('.frame[data-frame=1]').show();
+var mySlider = $("input.slider").slider().on('slide', function(frame){
+    $('.frame').hide();
+    $('.frame[data-frame=' + frame.value + ']').show();
+});
+</script>
+</body>
+</html>

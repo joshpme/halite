@@ -1,24 +1,19 @@
 <?php
-
 namespace Halite;
-
 require("halite/loader.php");
 
-$map = new Map(true);
+$map = new Map();
 
+$map->init();
 
-$map->init("RandomBot");
+$map->ready("RandomBot");
+
 while (true)
 {
+    foreach ($map->myBlocks() as $block)
+    {
+        $block->move(rand(0,4));
+    }
 
-    // find my first block
-    $block = $map->first($map->me);
-
-    do {
-        $block->move = 0;
-        // get my next block
-    } while ($block = $block->next($map->me));
-
-    // send moves and get next frame
     $map->update();
 }

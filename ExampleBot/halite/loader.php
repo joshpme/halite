@@ -18,5 +18,14 @@ const DIRECTIONS = array(STILL, UP, RIGHT, DOWN, LEFT);
 const CARDINALS = array(UP, RIGHT, DOWN, LEFT);
 const INVERSE = array(STILL, DOWN, LEFT, UP, RIGHT);
 
+function debug($message,$frame = -1)
+{
+    global $map;
+    if ($frame == -1 || $frame == $map->frame)
+    {
+        file_put_contents("debug.txt",$message . "\r\n", FILE_APPEND);
+    }
+}
+
 require("Block.php");
 require("Map.php");
