@@ -312,15 +312,6 @@ class Block {
         $this->move = $directions[0];
     }
 
-    /**
-     * Array of blocks as a path from this block to param block
-     * 
-     * @param Block $block
-     * @return Block[]
-     */
-    public function path(Block $block) {
-        // TODO
-    }
 
     /**
      * Closest border blocks with matching owner id
@@ -400,6 +391,56 @@ class Block {
             return false;
         }
     }
+	
+	public function cost()
+	{
+		if ($this->owner == $this->map->me)
+		{
+			return 0;
+		}
+		elseif ($this->owner == 0)
+		{
+			return $this->str;
+		}
+		else
+		{
+			return -1;
+			// calculate enemy cost
+		}
+	}
+	
+	public function closestHighProd($maxDistance)
+	{
+		// You have 15 seconds to make up your mind what to do, use it wisely
+		$targets = $this->map->byOwner[0];
+		usort($targets,"byProd");
+
+		if (count($targets) == 0)
+		{
+			return null;
+		}
+		$prod = $targets[0]->prod;
+		$closestTarget = null;
+		$closest = -1;
+		foreach ($targets as $target)
+		{
+			if ($target->prod < $prod && $closest != -1)
+			{
+				break;
+			}
+			else
+			{
+				$distance = $this->distance($target);
+				if ($closest == -1 || $distance < $closest && !$target->reserved && $distance < $maxDistance)
+				{
+					$closest = $distance;
+					$closestTarget = $target;
+				}
+			}
+		}
+		
+		return $closestTarget;
+	}
 
     /**
      * TODO: NOT FINISHED YET!!!!
@@ -407,7 +448,9 @@ class Block {
      *
      * @param Block $target
      */
-    public function towards(Block $target) {
+    public function path(Block $target) {
+		//echo "Path " . $this->x . "," . $this->y . " to " . $target->x . "," . $target->y . "<br />";
+		
         $dx = $this->x - $target->x;
         $dy = $this->y - $target->y;
 
@@ -418,90 +461,70 @@ class Block {
         if (abs($dy) > $this->map->height / 2) {
             $dy = $dy > 0 ? $dy - $this->map->height : $this->map->height + $dy;
         }
+		
 
-        $yl = $dy < 0 ? $this->y : $target->y;
-        $yh = $dy < 0 ? $target->y : $this->y;
+		//echo "Difference X: " . $dx . " Y: " . $dy . "<br />";
 
-        $xl = $dx < 0 ? $this->x : $target->x;
-        $xh = $dx < 0 ? $target->x : $this->x;
+		$towards = [];
+		if ($dx != 0)
+		{
+			$towards[] = $dx > 0 ? LEFT : RIGHT;
+		}
+		if ($dy != 0)
+		{
+			$towards[] = $dy > 0 ? UP : DOWN;
+		}
+		
+		if ($this->distance($target) == 0)
+		{
+			return array("directions"=>[0],"blocks"=>array(), "cost"=>0, "prod"=>0);
+		}
+		if ($this->distance($target) == 1)
+		{
+			return array("directions"=>[$towards[0]], "blocks"=>array($target), "cost" => $target->cost(), "prod"=>$target->prod);
+		}
+		else
+		{
+			$costs = [];
+			$paths = [];
+			$prods = [];
+			foreach ($towards as $direction)
+			{
+				$path = $this->get($direction)->path($target);
+				$costs[$direction] = $this->get($direction)->cost() + $path['cost'];
+				$prods[$direction] = $path['prod'] + $this->get($direction)->prod;
+				$paths[$direction] = $path;
+			}
+			
+			
+			$min = min($costs);
+			$directions = array_keys($costs, $min);
+			
+			$highestProd = -1;
+			$highestDirection = -1;
+			
+			foreach ($directions as $direction)
+			{
+				if ($highestProd == -1 || $prods[$direction] > $highestProd)
+				{
+					$highestDirection = $direction;
+					$highestProd = $prods[$direction];
+				}
+			}
 
-        echo "XL: " . $xl . "<br />";
-        echo "XH: " . $xh . "<br />";
-        if ($dx == 0) {
-            $this->move = $dy > 0 ? UP : DOWN;
-            return 0;
-        }
-
-        if ($dy == 0) {
-            $this->move = $dx > 0 ? LEFT : RIGHT;
-            return 0;
-        }
-
-        $xcost = [];
-        $ycost = [];
-
-        for ($y = $yl; $y <= $yh; $y++) {
-            $ycost[$y] = 0;
-            for ($x = $xl; $x <= $xh; $x++) {
-                $block = $this->map->blocks[$x][$y];
-                if ($block->owner != $this->owner) {
-                    $ycost[$y] += $block->str;
-                }
-            }
-        }
-
-
-        echo "DX: " . $dx . "<br />";
-        echo "DY: " . $dy . "<br />";
-        for ($x = $xl; $x <= $xh; $x++) {
-            $xcost[$x] = 0;
-            for ($y = $yl; $y <= $yh; $y++) {
-                $block = $this->map->blocks[$x][$y];
-                if ($block->owner != $this->owner) {
-                    $xcost[$x] += $block->str;
-                }
-            }
-        }
-
-
-        var_dump($xcost);
-        var_dump($ycost);
-
-        $targetx = array_search(min($xcost), $xcost);
-        $targety = array_search(min($ycost), $ycost);
-
-        $costy = min($ycost) / abs($dy);
-        $costx = min($xcost) / abs($dx);
-
-        if ($this->map->frame == 20) {
-
-
-            echo "On frame " . $this->map->frame . "<br />";
-            echo "I am block " . $this->x . "," . $this->y . "<br />";
-//
-        }
-
-        //echo "Target X: " . $targetx . "<br />";
-        //echo "Target Y: " . $targety . "<br />";
-
-        if ($costy < $costx && $targety != $this->y || ($targetx == $this->x && $costy > $costx)) {
-            if ($this->map->frame == 20) {
-                echo "Max X: " . min($xcost) . "<br />";
-                echo "Max Y: " . min($ycost) . "<br />";
-                echo "Target row is Y Level " . $targety . "<br />";
-            }
-            //echo "Go to [" . $this->x . "][" . $targety . "]<br />";
-            $this->move = $dy < 0 ? UP : DOWN;
-        } else {
-            if ($this->map->frame == 20) {
-                echo "Max X: " . min($xcost) . "<br />";
-                echo "Max Y: " . min($ycost) . "<br />";
-                echo "Target row to X Level " . $targetx . "<br />";
-                echo "Attempting to move " . $dx > 0 ? "LEFT" : "RIGHT";
-            }
-            //echo "Go to [" . $targetx . "][" . $this->y . "]<br />";
-            $this->move = $dx < 0 ? LEFT : RIGHT;
-        }
+			$direction = $highestDirection;
+			
+			array_unshift($paths[$direction]['directions'],$direction);
+			array_unshift($paths[$direction]['blocks'],$this->get($direction));
+			return array(
+				"directions"=>$paths[$direction]['directions'],
+				"blocks"=>$paths[$direction]['blocks'], 
+				"cost" => $min,
+				"prod"=>$prods[$direction]
+			);
+			
+		}
+		
     }
 
 }
