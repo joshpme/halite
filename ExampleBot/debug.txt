@@ -1,9 +1,0 @@
-[#1] [10,10] Owner: 1 Str: 117 Prod: 7 directly taking over [10,11] Owner: 0 Str: 111 Prod: 8
-[#7] [10,11] Owner: 1 Str: 54 Prod: 8 requesting assistance to take over [9,11] Owner: 0 Str: 91 Prod: 8
-[#8] [10,11] Owner: 1 Str: 97 Prod: 8 directly taking over [9,11] Owner: 0 Str: 91 Prod: 8
-[#12] [10,10] Owner: 1 Str: 28 Prod: 7 requesting assistance to take over [9,10] Owner: 0 Str: 90 Prod: 7
-[#12] [9,11] Owner: 1 Str: 30 Prod: 8 requesting assistance to take over [9,10] Owner: 0 Str: 90 Prod: 7
-[#13] [10,10] Owner: 1 Str: 59 Prod: 7 directly taking over [9,10] Owner: 0 Str: 90 Prod: 7
-[#13] [9,11] Owner: 1 Str: 38 Prod: 8 directly taking over [9,10] Owner: 0 Str: 90 Prod: 7
-[#17] [9,10] Owner: 1 Str: 28 Prod: 7 requesting assistance to take over [8,10] Owner: 0 Str: 70 Prod: 7
-[#18] [9,10] Owner: 1 Str: 80 Prod: 7 directly taking over [8,10] Owner: 0 Str: 70 Prod: 7
