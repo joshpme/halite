@@ -6,7 +6,6 @@ $map = new Map();
 
 $map->init();
 
-
 $map->ready("MyBot");
 
 while (true)
